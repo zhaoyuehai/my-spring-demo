@@ -1,0 +1,52 @@
+server:
+  port: 80
+
+spring:
+  application:
+    name: gradle-spring-demo
+  datasource:
+    name: yuehai
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      filters: stat
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/yuehai?useUnicode=true&characterEncoding=utf-8&serverTimezone=GMT
+      username: root
+      password: 123456
+      initial-size: 1
+      min-idle: 1
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 'x'
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: false
+      max-pool-prepared-statement-per-connection-size: 20
+mybatis:
+  type-aliases-package: com.yuehai.entity
+  mapper-locations: classpath:mapper/*.xml
+  configuration: #mybatis sql日志输出
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+#pagehelper 分页插件
+pagehelper:
+  helper-dialect: mysql #分页插件会自动检测当前的数据库链接，自动选择合适的分页方式。
+  reasonable: false #分页合理化参数，默认值为false。当该参数设置为 true 时，pageNum<=0 时会查询第一页，pageNum>pages（超过总数时），会查询最后一页。默认false 时，直接根据参数进行查询。
+  support-methods-arguments: true #支持通过 Mapper 接口参数来传递分页参数，默认值false
+#  params: 为了支持startPage(Object params)方法，增加了该参数来配置参数映射，用于从对象中根据属性名取值， 可以配置 pageNum,pageSize,count,pageSizeZero,reasonable，不配置映射的用默认值， 默认值为pageNum=pageNum;pageSize=pageSize;count=countSql;reasonable=reasonable;pageSizeZero=pageSizeZero。
+
+#Jwt
+jwt:
+  secret: ZHAOYUEHAIchangqiaoqiao
+  header: Authorization
+  tokenHeader: "Bearer "
+  expiration:  7200 #7200s -> 2小时 过期
+  #  expiration:  300 #300s ->测试时， 5分钟过期
+  route:
+    authentication:
+      path: auth/login
+      refresh: auth/refresh
+      register: auth/register
