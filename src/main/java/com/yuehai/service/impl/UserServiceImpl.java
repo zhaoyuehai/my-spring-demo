@@ -1,16 +1,16 @@
 package com.yuehai.service.impl;
 
 import com.github.pagehelper.PageHelper;
-import com.yuehai.entity.LoginEntity;
-import com.yuehai.entity.ResultEnum;
-import com.yuehai.entity.RoleEntity;
-import com.yuehai.entity.UserEntity;
+import com.yuehai.entity.*;
 import com.yuehai.exception.BaseException;
 import com.yuehai.mapper.UserMapper;
 import com.yuehai.security.JwtTokenUtil;
 import com.yuehai.security.MyUsernameNotFoundException;
 import com.yuehai.service.UserService;
+import com.yuehai.util.ResultUtil;
+import com.yuehai.util.StringCheckUtil;
 import org.apache.tomcat.util.codec.binary.Base64;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -21,8 +21,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -51,7 +53,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public LoginEntity login(String username, String password) {
+    public ResultEntity login(String username, String password) {
         try {
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, new String(Base64.decodeBase64(password), StandardCharsets.UTF_8));
             Authentication authenticate = authenticationManager.authenticate(authenticationToken);
@@ -63,7 +65,7 @@ public class UserServiceImpl implements UserService {
             // TODO: 2019/4/11 refreshToken
             long expiration = jwtTokenUtil.generateExpiration();
             String token = jwtTokenUtil.generateToken(user.getUserName(), expiration);
-            return new LoginEntity(token, token, tokenHeader, expiration, user);
+            return ResultUtil.success(new LoginEntity(token, token, tokenHeader, expiration, user), "登录成功");
         } catch (Exception e) {
             if (e.getCause() instanceof LockedException) {
                 throw new BaseException(ResultEnum.USER_LOCKED);
@@ -80,7 +82,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public LoginEntity token(String refreshToken) {
+    public ResultEntity token(String refreshToken) {
         if (!jwtTokenUtil.isTokenExpired(refreshToken)) {
             String username = jwtTokenUtil.getUsernameFromToken(refreshToken);
             UserEntity user = findUserByName(username);
@@ -88,7 +90,7 @@ public class UserServiceImpl implements UserService {
                 // TODO: 2019/4/11  refreshToken
                 long expiration = jwtTokenUtil.generateExpiration();
                 String newToken = jwtTokenUtil.refreshToken(refreshToken, expiration);
-                return new LoginEntity(newToken, newToken, tokenHeader, expiration, user);
+                return ResultUtil.success(new LoginEntity(newToken, newToken, tokenHeader, expiration, user));
             } else {
                 throw new BaseException(ResultEnum.LOGIN_INFO_ERROR);
             }
@@ -100,52 +102,91 @@ public class UserServiceImpl implements UserService {
     //在插入到tb_user和tb_user_role两张表的过程中，出现错误就回滚
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public int register(UserEntity userEntity) {
+    public ResultEntity register(UserEntity userEntity) {
+        if (StringUtils.isEmpty(userEntity.getUserName())) {
+            return ResultUtil.error("用户名不能为空");
+        }
+        if (!StringCheckUtil.isUserName(userEntity.getUserName())) {
+            return ResultUtil.error("用户名格式错误【4-16位字母、数字、下划线】");
+        }
         if (findUserByName(userEntity.getUserName()) != null) {
             throw new BaseException(ResultEnum.USERNAME_EXIST);
         }
+        if (StringUtils.isEmpty(userEntity.getPassword())) {
+            return ResultUtil.error("密码不能为空");
+        }
+        if (!StringCheckUtil.isPassword(userEntity.getPassword())) {
+            return ResultUtil.error("密码格式错误【6-16位数字或字母】");
+        }
+        if (StringUtils.isEmpty(userEntity.getPhone())) {
+            return ResultUtil.error("手机号不能为空");
+        }
+        if (!StringCheckUtil.isChinaPhoneLegal(userEntity.getPhone())) {
+            return ResultUtil.error("手机号格式错误");
+        }
         if (findUserByPhone(userEntity.getPhone()) != null) {
             throw new BaseException(ResultEnum.PHONE_EXIST);
+        }
+        if (StringUtils.isEmpty(userEntity.getEmail())) {
+            return ResultUtil.error("邮箱不能为空");
+        }
+        if (!StringCheckUtil.isEmail(userEntity.getEmail())) {
+            return ResultUtil.error("邮箱格式错误");
+        }
+        if (findUserByEmail(userEntity.getEmail()) != null) {
+            throw new BaseException(ResultEnum.EMAIL_EXIST);
         }
         String password = passwordEncoder().encode(new String(Base64.decodeBase64(userEntity.getPassword()), StandardCharsets.UTF_8));
         userEntity.setPassword(password);
         userEntity.setStatus(1);//默认激活状态
         int i = userMapper.insertUser(userEntity);
-        if (i == 1) {//用户表插入新用户成功后，为该用户设置默认游客角色 --> GUEST
+        if (i > 0) {//用户表插入新用户成功后，为该用户设置默认游客角色 --> GUEST
             UserEntity user = findUserByName(userEntity.getUserName());
             if (user != null) {
                 i = addRole(user.getId(), 2);
             }
         }
-        return i;
+        if (i > 0) {
+            return ResultUtil.success("注册成功");
+        } else {
+            return ResultUtil.error("注册失败");
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public int deleteUser(long userId) {
+    public ResultEntity deleteUser(long userId) {
         String name = SecurityContextHolder.getContext().getAuthentication().getName();
         UserEntity user = findUserByName(name);
         if (user == null) {
             user = findUserByPhone(name);
         }
-        if (user.getId() == userId) throw new BaseException(ResultEnum.DELETE_YOURSELF);//业务：不能删除自己
-        List<RoleEntity> roleEntities = userMapper.selectRoleByUserId(userId);
-        for (RoleEntity roleEntity : roleEntities) {
-            if (roleEntity.getName().equals("ROLE_ADMIN")) {
-                throw new BaseException(ResultEnum.DELETE_ROOT);//业务：不能删除管理员
+        if (user != null) {
+            if (user.getId() == userId) throw new BaseException(ResultEnum.DELETE_YOURSELF);//业务：不能删除自己
+            List<RoleEntity> roleEntities = userMapper.selectRoleByUserId(userId);
+            for (RoleEntity roleEntity : roleEntities) {
+                if (roleEntity.getName().equals("ROLE_ADMIN")) {
+                    throw new BaseException(ResultEnum.DELETE_ROOT);//业务：不能删除管理员
+                }
             }
+        } else {
+            return ResultUtil.error("用户未登录");
         }
         int i = userMapper.deleteUser(userId);
-        if (i == 1) {
+        if (i > 0) {
             //用户表删除用户成功后，删除用户角色
             i = deleteRoles(userId);
         }
-        return i;
+        if (i > 0) {
+            return ResultUtil.success("删除成功");
+        } else {
+            return ResultUtil.error("删除失败");
+        }
     }
 
     @Override
     public int addRole(long userId, int roleCode) {
-//        不重复插入
+        //不重复插入
         List<RoleEntity> roleEntities = userMapper.selectRoleByUserId(userId);
         for (RoleEntity roleEntity : roleEntities) {
             if (roleEntity.getCode() == roleCode) {
@@ -166,14 +207,69 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserEntity> findUsers(int pageNum, int pageSize) {
-        PageHelper.startPage(pageNum, pageSize);
-        return userMapper.selectAllUser();
+    public ResultEntity updateUser(UserEntity userEntity) {
+        if (StringUtils.isEmpty(userEntity.getId())) {
+            return ResultUtil.error("该用户不存在");
+        }
+        UserEntity user = findUserById(userEntity.getId());
+        if (user == null) {
+            return ResultUtil.error("该用户不存在");
+        }
+        if (StringUtils.isEmpty(userEntity.getPhone())) {
+            return ResultUtil.error("手机号不能为空");
+        }
+        if (user.getPhone().equals(userEntity.getPhone())) {
+            userEntity.setPhone(null);
+        } else {
+            if (!StringCheckUtil.isChinaPhoneLegal(userEntity.getPhone())) {
+                return ResultUtil.error("手机号格式错误");
+            }
+            if (findUserByPhone(userEntity.getPhone()) != null) {
+                throw new BaseException(ResultEnum.PHONE_EXIST);
+            }
+        }
+        if (StringUtils.isEmpty(userEntity.getEmail())) {
+            return ResultUtil.error("邮箱不能为空");
+        }
+        if (user.getEmail().equals(userEntity.getEmail())) {
+            userEntity.setEmail(null);
+        } else {
+            if (!StringCheckUtil.isEmail(userEntity.getEmail())) {
+                return ResultUtil.error("邮箱格式错误");
+            }
+            if (findUserByEmail(userEntity.getEmail()) != null) {
+                throw new BaseException(ResultEnum.EMAIL_EXIST);
+            }
+        }
+        if (!StringUtils.isEmpty(userEntity.getNickName())) {
+            if (!StringCheckUtil.isNickName(userEntity.getNickName())) {
+                return ResultUtil.error("昵称格式错误【2-20位中文、英文、数字】");
+            }
+        }
+        int i = userMapper.updateUser(userEntity);
+        if (i > 0) {
+            return ResultUtil.success("修改成功");
+        } else {
+            return ResultUtil.error("修改失败");
+        }
     }
 
     @Override
-    public List<UserEntity> findVips() {
-        return userMapper.selectAllVip();
+    public ResultEntity findUsers(int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        List<UserEntity> userEntities = userMapper.selectAllUser();
+        ArrayList<UserBean> userBeans = new ArrayList<>();
+        for (UserEntity entity : userEntities) {
+            UserBean userBean = new UserBean();
+            BeanUtils.copyProperties(entity, userBean);
+            userBeans.add(userBean);
+        }
+        return ResultUtil.success(userBeans);
+    }
+
+    @Override
+    public ResultEntity findVips() {
+        return ResultUtil.success(userMapper.selectAllVip());
     }
 
     @Override
@@ -184,5 +280,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserEntity findUserByPhone(String phone) {
         return userMapper.selectUserByPhone(phone);
+    }
+
+    @Override
+    public UserEntity findUserByEmail(String phone) {
+        return userMapper.selectUserByEmail(phone);
+    }
+
+    @Override
+    public UserEntity findUserById(long id) {
+        return userMapper.selectUserById(id);
     }
 }

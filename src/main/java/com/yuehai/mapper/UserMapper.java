@@ -15,9 +15,15 @@ public interface UserMapper {
 
     int deleteUser(long id);
 
+    int updateUser(UserEntity userEntity);
+
+    UserEntity selectUserById(long id);
+
     UserEntity selectUserByName(String username);
 
     UserEntity selectUserByPhone(String phone);
+
+    UserEntity selectUserByEmail(String email);
 
     List<UserEntity> selectAllUser();
 
@@ -27,13 +33,15 @@ public interface UserMapper {
 
     /**
      * 删除用户全部角色
+     *
      * @param userId 用户ID
      */
     int deleteUserRoles(long userId);
 
     /**
      * 删除单个角色
-     * @param userId 用户ID
+     *
+     * @param userId   用户ID
      * @param roleCode 角色代码
      */
     int deleteUserRole(@Param("userId") long userId, @Param("roleCode") int roleCode);

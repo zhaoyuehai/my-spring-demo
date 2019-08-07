@@ -23,6 +23,10 @@ public class ResultUtil {
         return success(o, ResultEnum.SUCCESS.getMessage());
     }
 
+    public static ResultEntity success(String message) {
+        return success(null, message);
+    }
+
     public static ResultEntity success() {
         return success(null, ResultEnum.SUCCESS.getMessage());
     }

@@ -3,12 +3,16 @@ package com.yuehai;
 import com.yuehai.util.SystemUtil;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 
 import java.net.InetAddress;
 import java.net.SocketException;
 
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+        SecurityAutoConfiguration.class
+})
 @MapperScan("com.yuehai.mapper")
 public class GradleSpringDemoApplication {
 

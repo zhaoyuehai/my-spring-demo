@@ -50,23 +50,26 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.csrf().disable() //由于使用的是JWT，我们这里不需要csrf
+        httpSecurity.cors().and()//允许跨域
+                .csrf().disable() //由于使用的是JWT，我们这里不需要csrf
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)//基于token，所以不需要session
                 .and()
-                .authorizeRequests()
-                .antMatchers("/",
-                        "/api/v1/hello",
-                        "/*.html",
-                        "/favicon.ico",
-                        "/**/*.html",
-                        "/**/*.css",
-                        "/**/*.js").permitAll() //允许对于网站静态资源的无授权访问
-                .antMatchers(HttpMethod.POST,
-                        "/api/v1/login",
-                        "/api/v1/register",
-                        "/api/v1/token").permitAll()
-                .anyRequest().authenticated()//其他访问都需要权限认证
-                .and()
+//                .antMatchers("/v2/api-docs", "/configuration/ui", "/swagger-resources", "/configuration/security", "/swagger-ui.html", "/webjars/**","/swagger-resources/configuration/ui","/swagge‌​r-ui.html").permitAl‌​l()
+//                .authorizeRequests()
+//                .antMatchers("/",
+//                        "/api/v1/hello",
+//                        "/*.html",
+//                        "/favicon.ico",
+//                        "/**/*.html",
+//                        "/**/*.css",
+//                        "/**/*.js")
+//                .permitAll() //允许对于网站静态资源的无授权访问
+//                .antMatchers(HttpMethod.POST,
+//                        "/api/v1/login",
+//                        "/api/v1/token")
+//                .permitAll()
+//                .anyRequest().authenticated()//其他访问都需要权限认证
+//                .and()
                 .headers().cacheControl(); // 禁用缓存
         httpSecurity.addFilterBefore(jwtAuthenticationTokenFilter, UsernamePasswordAuthenticationFilter.class);
         httpSecurity.exceptionHandling().authenticationEntryPoint(unauthorizedEntryPoint);

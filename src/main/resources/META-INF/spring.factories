@@ -1,0 +1,7 @@
+org.springframework.context.ApplicationListener=\
+  com.yuehai.common.HelloApplicationListener
+org.springframework.context.ApplicationContextInitializer=\
+  com.yuehai.common.HelloApplicationContextInitializer
+
+org.springframework.boot.SpringApplicationRunListener=\
+  com.yuehai.common.HelloApplicationRunListener

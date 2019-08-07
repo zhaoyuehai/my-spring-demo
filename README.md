@@ -101,3 +101,15 @@ Spring Security 安全框架（权限管理，访问控制）+ JWT
 
   实现UserDetailsService接口，用于加载用户信息。 
 ```
+SpringBoot启动分析，下面是一些监听（SpringBoot中的Spring Factories机制）
+```
+META-INF/spring.factories 
+com.yuehai.common.HelloApplicationContextInitializer
+com.yuehai.common.HelloApplicationListener
+com.yuehai.common.HelloApplicationRunListener
+```
+Spring Cors 跨域问题
+```
+com.yuehai.security.CorsConfig
+com.yuehai.security.WebSecurityConfig
+```

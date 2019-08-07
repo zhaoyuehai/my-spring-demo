@@ -29,8 +29,8 @@
         from tb_user</sql>
 
     <insert id="insertUser" parameterType="com.yuehai.entity.UserEntity">
-        insert into tb_user(user_name, password, phone, status)
-        values (#{userName}, #{password}, #{phone}, #{status})
+        insert into tb_user(user_name, password, phone, email, status)
+        values (#{userName}, #{password}, #{phone}, #{email}, #{status})
     </insert>
 
     <delete id="deleteUser" parameterType="Long">
@@ -38,6 +38,27 @@
         from tb_user
         where uid = #{value}
     </delete>
+
+    <update id="updateUser" parameterType="com.yuehai.entity.UserEntity">
+        update tb_user
+        <set>
+            <if test="phone != null">
+                phone = #{phone},
+            </if>
+            <if test="email != null">
+                email = #{email},
+            </if>
+            <if test="nickName != null">
+                nick_name = #{nickName},
+            </if>
+        </set>
+        where uid = #{id}
+    </update>
+
+    <select id="selectUserById" parameterType="Long" resultMap="UserResultMap">
+        <include refid="User_Column_List"/>
+        where uid = #{value}
+    </select>
 
     <select id="selectUserByName" parameterType="String" resultMap="UserResultMap">
         <include refid="User_Column_List"/>
@@ -47,6 +68,11 @@
     <select id="selectUserByPhone" parameterType="String" resultMap="UserResultMap">
         <include refid="User_Column_List"/>
         where phone = #{value}
+    </select>
+
+    <select id="selectUserByEmail" parameterType="String" resultMap="UserResultMap">
+        <include refid="User_Column_List"/>
+        where email = #{value}
     </select>
 
     <select id="selectAllUser" resultMap="UserResultMap">
