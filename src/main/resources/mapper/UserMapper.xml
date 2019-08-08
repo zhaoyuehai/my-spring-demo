@@ -12,10 +12,11 @@
         <result column="status" property="status" jdbcType="INTEGER"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="role_name" property="roleName" jdbcType="VARCHAR"/>
     </resultMap>
 
-    <!--User操作-->
-    <sql id="User_Column_List">
+    <!--返回用户信息（不含角色字段）-->
+    <sql id="User_Column_1">
         select uid,
                user_name,
                password,
@@ -27,6 +28,23 @@
                create_time,
                update_time
         from tb_user</sql>
+
+    <!--需要返回（含角色字段）-->
+    <sql id="User_Column_2">
+           select uid,
+               user_name,
+               password,
+               email,
+               nick_name,
+               phone,
+               avatar,
+               status,
+               create_time,
+               update_time,
+               role_name
+        from tb_user u,
+        tb_user_role u_r,
+        tb_role r</sql>
 
     <insert id="insertUser" parameterType="com.yuehai.entity.UserEntity">
         <selectKey keyProperty="id" resultType="java.lang.Long" order="AFTER">
@@ -70,31 +88,39 @@
     </update>
 
     <select id="selectUserById" parameterType="Long" resultMap="UserResultMap">
-        <include refid="User_Column_List"/>
+        <include refid="User_Column_1"/>
         where uid = #{value}
     </select>
 
+    <!--用户名登录需要返回权限字段-->
     <select id="selectUserByName" parameterType="String" resultMap="UserResultMap">
-        <include refid="User_Column_List"/>
-        where user_name = #{value}
+        <include refid="User_Column_2"/>
+        where u.user_name = #{value}
+        and u.uid=u_r.user_id
+        and u_r.role_code=r.role_code
     </select>
 
+    <!--手机号登录需要返回权限字段-->
     <select id="selectUserByPhone" parameterType="String" resultMap="UserResultMap">
-        <include refid="User_Column_List"/>
-        where phone = #{value}
+        <include refid="User_Column_2"/>
+        where u.phone = #{value}
+        and u.uid=u_r.user_id
+        and u_r.role_code=r.role_code
     </select>
 
     <select id="selectUserByEmail" parameterType="String" resultMap="UserResultMap">
-        <include refid="User_Column_List"/>
+        <include refid="User_Column_1"/>
         where email = #{value}
     </select>
 
     <select id="selectAllUser" resultMap="UserResultMap">
-        <include refid="User_Column_List"/>
+        <include refid="User_Column_2"/>
+        where u.uid=u_r.user_id
+        and u_r.role_code=r.role_code
     </select>
 
     <select id="selectAllVip" resultMap="UserResultMap">
-        <include refid="User_Column_List"/>
+        <include refid="User_Column_1"/>
         u,
         tb_role r,
         tb_user_role u_r

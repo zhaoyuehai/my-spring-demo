@@ -17,6 +17,7 @@ public class LoginEntity {
     private String phone;
     private String email;
     private String avatar;
+    private String roleName;
     private int status;
 
     public LoginEntity(String accessToken, String refreshToken, String tokenHeader, long expiration, UserEntity user) {
@@ -29,6 +30,7 @@ public class LoginEntity {
         this.phone = user.getPhone();
         this.email = user.getEmail();
         this.avatar = user.getAvatar();
+        this.roleName = user.getRoleName();
         this.status = user.getStatus();
     }
 }

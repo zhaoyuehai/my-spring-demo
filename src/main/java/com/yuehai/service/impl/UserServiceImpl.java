@@ -196,6 +196,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ResultEntity updateUser(UserEntity userEntity) {
+        String name = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = findUserByName(name);
+        if (user == null) {
+            user = findUserByPhone(name);
+        }
+        if (user != null) {
+            if (user.getId() != userEntity.getId()) {//自己可以修改自己的,管理员可以修改所有人的
+                List<RoleEntity> roleEntities = userMapper.selectRoleByUserId(user.getId());
+                for (RoleEntity roleEntity : roleEntities) {
+                    if (!roleEntity.getName().equals("ROLE_ADMIN")) {
+                        throw new BaseException(ResultEnum.MODIFY_OTHERS);//业务：除了管理员外不可以修改别人信息
+                    }
+                }
+            }
+        } else {
+            return ResultUtil.error("用户未登录");
+        }
         if (StringUtils.isEmpty(userEntity.getId())) {
             return ResultUtil.error("该用户不存在");
         }
@@ -271,8 +288,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserEntity findUserByEmail(String phone) {
-        return userMapper.selectUserByEmail(phone);
+    public UserEntity findUserByEmail(String email) {
+        return userMapper.selectUserByEmail(email);
     }
 
     @Override

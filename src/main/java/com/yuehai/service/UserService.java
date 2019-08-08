@@ -37,7 +37,7 @@ public interface UserService {
 
     UserEntity findUserByPhone(String phone);
 
-    UserEntity findUserByEmail(String phone);
+    UserEntity findUserByEmail(String email);
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('VIP') or hasRole('USER')")
     ResultEntity findUsers(int pageNum, int pageSize);
@@ -48,7 +48,6 @@ public interface UserService {
     @PreAuthorize("hasRole('ADMIN')")
     ResultEntity deleteUser(long userId);
 
-    @PreAuthorize("hasRole('ADMIN') or hasRole('VIP')")
     ResultEntity updateUser(UserEntity userEntity);
 
     /**

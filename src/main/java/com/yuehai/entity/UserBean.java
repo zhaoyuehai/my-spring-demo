@@ -15,4 +15,5 @@ public class UserBean {
     private String nickName;
     private String phone;
     private String avatar;
+    private String roleName;
 }

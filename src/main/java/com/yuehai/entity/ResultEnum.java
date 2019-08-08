@@ -23,7 +23,8 @@ public enum ResultEnum {
     LOGIN_INFO_EXPIRED("50002", "登录信息已过期"),
 
     DELETE_ROOT("60001", "不能删除管理员"),
-    DELETE_YOURSELF("60002", "不能删除自己");
+    DELETE_YOURSELF("60002", "不能删除自己"),
+    MODIFY_OTHERS("70001", "不能修改他人信息");
 
 
     private String code;

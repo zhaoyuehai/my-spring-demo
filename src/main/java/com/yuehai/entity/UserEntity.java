@@ -19,4 +19,5 @@ public class UserEntity {
     private int status;
     private Date createTime;
     private Date updateTime;
+    private String roleName;
 }
