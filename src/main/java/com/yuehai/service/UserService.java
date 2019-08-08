@@ -39,15 +39,16 @@ public interface UserService {
 
     UserEntity findUserByEmail(String phone);
 
-    //@PreAuthorize("hasRole('ADMIN') or hasRole('VIP') or hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VIP') or hasRole('USER')")
     ResultEntity findUsers(int pageNum, int pageSize);
 
-//    @PreAuthorize("hasRole('ADMIN') or hasRole('VIP')")
+    @PreAuthorize("hasRole('ADMIN')")
     ResultEntity findVips();
 
-//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     ResultEntity deleteUser(long userId);
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VIP')")
     ResultEntity updateUser(UserEntity userEntity);
 
     /**
@@ -57,7 +58,7 @@ public interface UserService {
      * @param roleCode 角色ID
      * @return int
      */
-//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     int addRole(long userId, int roleCode);
 
     /**
@@ -67,7 +68,7 @@ public interface UserService {
      * @param roleCode 角色ID
      * @return int
      */
-//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     int deleteRole(long userId, int roleCode);
 
     /**
@@ -76,6 +77,6 @@ public interface UserService {
      * @param userId 用户ID
      * @return int
      */
-//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     int deleteRoles(long userId);
 }

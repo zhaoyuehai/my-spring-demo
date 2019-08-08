@@ -35,7 +35,7 @@ public class UserController extends BaseController {
         return userService.token(refreshToken);
     }
 
-    @ApiOperation(value = "注册", notes = "用户密码在服务器存储之前会进行加密")
+    @ApiOperation(value = "注册", notes = "用户密码在服务器存储之前会进行加密，注册成功返回该用户id")
     @PostMapping(value = "user")
     public ResultEntity register(@RequestBody UserEntity userEntity) {
         return userService.register(userEntity);

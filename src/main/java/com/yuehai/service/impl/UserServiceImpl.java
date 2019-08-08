@@ -127,27 +127,15 @@ public class UserServiceImpl implements UserService {
         if (findUserByPhone(userEntity.getPhone()) != null) {
             throw new BaseException(ResultEnum.PHONE_EXIST);
         }
-        if (StringUtils.isEmpty(userEntity.getEmail())) {
-            return ResultUtil.error("邮箱不能为空");
-        }
-        if (!StringCheckUtil.isEmail(userEntity.getEmail())) {
-            return ResultUtil.error("邮箱格式错误");
-        }
-        if (findUserByEmail(userEntity.getEmail()) != null) {
-            throw new BaseException(ResultEnum.EMAIL_EXIST);
-        }
         String password = passwordEncoder().encode(new String(Base64.decodeBase64(userEntity.getPassword()), StandardCharsets.UTF_8));
         userEntity.setPassword(password);
         userEntity.setStatus(1);//默认激活状态
-        int i = userMapper.insertUser(userEntity);
-        if (i > 0) {//用户表插入新用户成功后，为该用户设置默认游客角色 --> GUEST
-            UserEntity user = findUserByName(userEntity.getUserName());
-            if (user != null) {
-                i = addRole(user.getId(), 2);
-            }
+        int result = userMapper.insertUser(userEntity);
+        if (result > 0) {//用户表插入新用户成功后，为该用户设置默认游客角色 --> GUEST
+            result = addRole(userEntity.getId(), 2);
         }
-        if (i > 0) {
-            return ResultUtil.success("注册成功");
+        if (result > 0) {
+            return ResultUtil.success(userEntity.getId(), "注册成功");
         } else {
             return ResultUtil.error("注册失败");
         }
@@ -172,12 +160,12 @@ public class UserServiceImpl implements UserService {
         } else {
             return ResultUtil.error("用户未登录");
         }
-        int i = userMapper.deleteUser(userId);
-        if (i > 0) {
+        int result = userMapper.deleteUser(userId);
+        if (result > 0) {
             //用户表删除用户成功后，删除用户角色
-            i = deleteRoles(userId);
+            result = deleteRoles(userId);
         }
-        if (i > 0) {
+        if (result > 0) {
             return ResultUtil.success("删除成功");
         } else {
             return ResultUtil.error("删除失败");
@@ -211,37 +199,37 @@ public class UserServiceImpl implements UserService {
         if (StringUtils.isEmpty(userEntity.getId())) {
             return ResultUtil.error("该用户不存在");
         }
-        UserEntity user = findUserById(userEntity.getId());
-        if (user == null) {
+        UserEntity oldUser = findUserById(userEntity.getId());
+        if (oldUser == null) {
             return ResultUtil.error("该用户不存在");
         }
         if (StringUtils.isEmpty(userEntity.getPhone())) {
             return ResultUtil.error("手机号不能为空");
         }
-        if (user.getPhone().equals(userEntity.getPhone())) {
-            userEntity.setPhone(null);
-        } else {
-            if (!StringCheckUtil.isChinaPhoneLegal(userEntity.getPhone())) {
-                return ResultUtil.error("手机号格式错误");
-            }
+        if (!StringCheckUtil.isChinaPhoneLegal(userEntity.getPhone())) {
+            return ResultUtil.error("手机号格式错误");
+        }
+        if (!oldUser.getPhone().equals(userEntity.getPhone())) {//检查手机号是否冲突
             if (findUserByPhone(userEntity.getPhone()) != null) {
                 throw new BaseException(ResultEnum.PHONE_EXIST);
             }
         }
-        if (StringUtils.isEmpty(userEntity.getEmail())) {
-            return ResultUtil.error("邮箱不能为空");
-        }
-        if (user.getEmail().equals(userEntity.getEmail())) {
+        if (StringUtils.isEmpty(userEntity.getEmail())) {//邮箱为非必填项
             userEntity.setEmail(null);
         } else {
             if (!StringCheckUtil.isEmail(userEntity.getEmail())) {
                 return ResultUtil.error("邮箱格式错误");
             }
-            if (findUserByEmail(userEntity.getEmail()) != null) {
-                throw new BaseException(ResultEnum.EMAIL_EXIST);
+            String oldEmail = oldUser.getEmail();
+            if (StringUtils.isEmpty(oldEmail) || !oldEmail.equals(userEntity.getEmail())) {//检查邮箱是否冲突
+                if (findUserByEmail(userEntity.getEmail()) != null) {
+                    throw new BaseException(ResultEnum.EMAIL_EXIST);
+                }
             }
         }
-        if (!StringUtils.isEmpty(userEntity.getNickName())) {
+        if (StringUtils.isEmpty(userEntity.getNickName())) {//昵称为非必填项
+            userEntity.setNickName(null);
+        } else {
             if (!StringCheckUtil.isNickName(userEntity.getNickName())) {
                 return ResultUtil.error("昵称格式错误【2-20位中文、英文、数字】");
             }

@@ -29,8 +29,11 @@
         from tb_user</sql>
 
     <insert id="insertUser" parameterType="com.yuehai.entity.UserEntity">
-        insert into tb_user(user_name, password, phone, email, status)
-        values (#{userName}, #{password}, #{phone}, #{email}, #{status})
+        <selectKey keyProperty="id" resultType="java.lang.Long" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into tb_user(user_name, password, phone, status)
+        values (#{userName}, #{password}, #{phone}, #{status})
     </insert>
 
     <delete id="deleteUser" parameterType="Long">
@@ -39,18 +42,29 @@
         where uid = #{value}
     </delete>
 
+    <!--email、nickName可以设为NULL值-->
     <update id="updateUser" parameterType="com.yuehai.entity.UserEntity">
         update tb_user
         <set>
-            <if test="phone != null">
+            <if test="phone != null and phone != ''">
                 phone = #{phone},
             </if>
-            <if test="email != null">
-                email = #{email},
-            </if>
-            <if test="nickName != null">
-                nick_name = #{nickName},
-            </if>
+            <choose>
+                <when test="email != null and email != ''">
+                    email = #{email},
+                </when>
+                <otherwise>
+                    email = NULL,
+                </otherwise>
+            </choose>
+            <choose>
+                <when test="nickName != null and nickName != ''">
+                    nick_name = #{nickName},
+                </when>
+                <otherwise>
+                    nick_name = NULL,
+                </otherwise>
+            </choose>
         </set>
         where uid = #{id}
     </update>
