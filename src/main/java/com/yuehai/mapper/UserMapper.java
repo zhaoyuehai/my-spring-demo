@@ -29,22 +29,23 @@ public interface UserMapper {
 
     List<UserEntity> selectAllVip();
 
+    /**
+     * 插入用户角色
+     */
     int insertUserRole(@Param("userId") long userId, @Param("roleCode") int roleCode);
 
     /**
-     * 删除用户全部角色
+     * 更新用户角色
+     */
+    int updateUserRole(@Param("userId") long userId, @Param("roleCode") int roleCode);
+
+    /**
+     * 删除角色
      *
      * @param userId 用户ID
      */
-    int deleteUserRoles(long userId);
+    int deleteUserRole(@Param("userId") long userId);
 
-    /**
-     * 删除单个角色
-     *
-     * @param userId   用户ID
-     * @param roleCode 角色代码
-     */
-    int deleteUserRole(@Param("userId") long userId, @Param("roleCode") int roleCode);
+    RoleEntity selectRoleByUserId(long id);
 
-    List<RoleEntity> selectRoleByUserId(long id);
 }

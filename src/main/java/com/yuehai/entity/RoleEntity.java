@@ -7,6 +7,6 @@ import lombok.Data;
  */
 @Data
 public class RoleEntity {
-    private int code;
+    private int id;
     private String name;
 }

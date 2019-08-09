@@ -62,10 +62,19 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 user = findUserByPhone(username);
             }
-            // TODO: 2019/4/11 refreshToken
-            long expiration = jwtTokenUtil.generateExpiration();
-            String token = jwtTokenUtil.generateToken(user.getUserName(), expiration);
-            return ResultUtil.success(new LoginEntity(token, token, tokenHeader, expiration, user), "登录成功");
+            if (user != null) {
+                // TODO: 2019/4/11 refreshToken
+                long expiration = jwtTokenUtil.generateExpiration();
+                String token = jwtTokenUtil.generateToken(user.getUserName(), expiration);
+                LoginEntity loginEntity = new LoginEntity(token, token, tokenHeader, expiration, user);
+                RoleEntity roleEntity = finRoleByUserId(user.getId());
+                if (roleEntity != null) {
+                    loginEntity.setRoleName(roleEntity.getName());
+                }
+                return ResultUtil.success(loginEntity, "登录成功");
+            } else {
+                throw new BaseException(ResultEnum.USER_NOT_FOUND);
+            }
         } catch (Exception e) {
             if (e.getCause() instanceof LockedException) {
                 throw new BaseException(ResultEnum.USER_LOCKED);
@@ -132,7 +141,7 @@ public class UserServiceImpl implements UserService {
         userEntity.setStatus(1);//默认激活状态
         int result = userMapper.insertUser(userEntity);
         if (result > 0) {//用户表插入新用户成功后，为该用户设置默认游客角色 --> GUEST
-            result = addRole(userEntity.getId(), 2);
+            result = setRole(userEntity.getId(), 2);
         }
         if (result > 0) {
             return ResultUtil.success(userEntity.getId(), "注册成功");
@@ -151,19 +160,17 @@ public class UserServiceImpl implements UserService {
         }
         if (user != null) {
             if (user.getId() == userId) throw new BaseException(ResultEnum.DELETE_YOURSELF);//业务：不能删除自己
-            List<RoleEntity> roleEntities = userMapper.selectRoleByUserId(userId);
-            for (RoleEntity roleEntity : roleEntities) {
-                if (roleEntity.getName().equals("ROLE_ADMIN")) {
-                    throw new BaseException(ResultEnum.DELETE_ROOT);//业务：不能删除管理员
-                }
+            RoleEntity roleEntity = userMapper.selectRoleByUserId(userId);
+            if (roleEntity.getName().equals("ROLE_ADMIN")) {
+                throw new BaseException(ResultEnum.DELETE_ROOT);//业务：不能删除管理员
             }
         } else {
             return ResultUtil.error("用户未登录");
         }
-        int result = userMapper.deleteUser(userId);
+        int result = deleteRole(userId);
         if (result > 0) {
-            //用户表删除用户成功后，删除用户角色
-            result = deleteRoles(userId);
+            //删除用户角色后,再删除用户表
+            result = userMapper.deleteUser(userId);
         }
         if (result > 0) {
             return ResultUtil.success("删除成功");
@@ -173,25 +180,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public int addRole(long userId, int roleCode) {
-        //不重复插入
-        List<RoleEntity> roleEntities = userMapper.selectRoleByUserId(userId);
-        for (RoleEntity roleEntity : roleEntities) {
-            if (roleEntity.getCode() == roleCode) {
-                return 1;
-            }
+    public int setRole(long userId, int roleCode) {
+        RoleEntity roleEntity = userMapper.selectRoleByUserId(userId);
+        if (roleEntity == null) {//新增
+            return userMapper.insertUserRole(userId, roleCode);
+        } else {//更新
+            return userMapper.updateUserRole(userId, roleCode);
         }
-        return userMapper.insertUserRole(userId, roleCode);
     }
 
     @Override
-    public int deleteRole(long userId, int roleCode) {
-        return userMapper.deleteUserRole(userId, roleCode);
-    }
-
-    @Override
-    public int deleteRoles(long userId) {
-        return userMapper.deleteUserRoles(userId);
+    public int deleteRole(long userId) {
+        return userMapper.deleteUserRole(userId);
     }
 
     @Override
@@ -203,11 +203,9 @@ public class UserServiceImpl implements UserService {
         }
         if (user != null) {
             if (user.getId() != userEntity.getId()) {//自己可以修改自己的,管理员可以修改所有人的
-                List<RoleEntity> roleEntities = userMapper.selectRoleByUserId(user.getId());
-                for (RoleEntity roleEntity : roleEntities) {
-                    if (!roleEntity.getName().equals("ROLE_ADMIN")) {
-                        throw new BaseException(ResultEnum.MODIFY_OTHERS);//业务：除了管理员外不可以修改别人信息
-                    }
+                RoleEntity roleEntity = userMapper.selectRoleByUserId(user.getId());
+                if (!roleEntity.getName().equals("ROLE_ADMIN")) {
+                    throw new BaseException(ResultEnum.MODIFY_OTHERS);//业务：除了管理员外不可以修改别人信息
                 }
             }
         } else {
@@ -290,6 +288,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserEntity findUserByEmail(String email) {
         return userMapper.selectUserByEmail(email);
+    }
+
+    @Override
+    public RoleEntity finRoleByUserId(long userId) {
+        return userMapper.selectRoleByUserId(userId);
     }
 
     @Override

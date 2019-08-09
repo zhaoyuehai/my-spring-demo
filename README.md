@@ -113,3 +113,7 @@ Spring Cors 跨域问题
 com.yuehai.security.CorsConfig
 com.yuehai.security.WebSecurityConfig
 ```
+IDEA安装lombok插件后需要再设置注解处理器可用: File | Settings | Build, Execution, Deployment | Compiler | Annotation Processors
+    设置 Enable annotation processing
+
+

@@ -31,7 +31,7 @@
 
     <!--需要返回（含角色字段）-->
     <sql id="User_Column_2">
-           select uid,
+        select uid,
                user_name,
                password,
                email,
@@ -43,8 +43,8 @@
                update_time,
                role_name
         from tb_user u,
-        tb_user_role u_r,
-        tb_role r</sql>
+             tb_user_role u_r,
+             tb_role r</sql>
 
     <insert id="insertUser" parameterType="com.yuehai.entity.UserEntity">
         <selectKey keyProperty="id" resultType="java.lang.Long" order="AFTER">
@@ -92,20 +92,14 @@
         where uid = #{value}
     </select>
 
-    <!--用户名登录需要返回权限字段-->
     <select id="selectUserByName" parameterType="String" resultMap="UserResultMap">
-        <include refid="User_Column_2"/>
-        where u.user_name = #{value}
-        and u.uid=u_r.user_id
-        and u_r.role_code=r.role_code
+        <include refid="User_Column_1"/>
+        where user_name = #{value}
     </select>
 
-    <!--手机号登录需要返回权限字段-->
     <select id="selectUserByPhone" parameterType="String" resultMap="UserResultMap">
-        <include refid="User_Column_2"/>
-        where u.phone = #{value}
-        and u.uid=u_r.user_id
-        and u_r.role_code=r.role_code
+        <include refid="User_Column_1"/>
+        where phone = #{value}
     </select>
 
     <select id="selectUserByEmail" parameterType="String" resultMap="UserResultMap">
@@ -113,10 +107,11 @@
         where email = #{value}
     </select>
 
+    <!--查询所有有权限的用户-->
     <select id="selectAllUser" resultMap="UserResultMap">
         <include refid="User_Column_2"/>
         where u.uid=u_r.user_id
-        and u_r.role_code=r.role_code
+        and u_r.role_id=r.id
     </select>
 
     <select id="selectAllVip" resultMap="UserResultMap">
@@ -125,45 +120,48 @@
         tb_role r,
         tb_user_role u_r
         where r.role_name = 'ROLE_VIP'
-        and r.role_code = u_r.role_code
+        and r.id = u_r.role_id
         and u.uid = u_r.user_id
     </select>
 
     <!--Role操作-->
     <resultMap id="RoleResultMap" type="com.yuehai.entity.RoleEntity">
-        <result column="role_code" property="code" jdbcType="INTEGER"/>
+        <result column="id" property="id" jdbcType="INTEGER"/>
         <result column="role_name" property="name" jdbcType="VARCHAR"/>
     </resultMap>
 
     <insert id="insertUserRole">
-        insert into tb_user_role(user_id, role_code)
+        insert into tb_user_role(user_id, role_id)
         values (#{userId,jdbcType=BIGINT}, #{roleCode,jdbcType=INTEGER})
     </insert>
 
-    <delete id="deleteUserRoles" parameterType="Long">
-        delete
-        from tb_user_role
+    <update id="updateUserRole" parameterType="Long">
+        update tb_user_role
+        <set>
+            <if test="roleCode != null">
+                roleCode=#{roleCode}
+            </if>
+        </set>
         where user_id = #{value}
-    </delete>
+    </update>
 
     <delete id="deleteUserRole" parameterType="Long">
         delete
         from tb_user_role
         where user_id = #{userId,jdbcType=BIGINT}
-          and role_code = #{roleCode,jdbcType=INTEGER}
     </delete>
 
     <select id="selectRoleByUserId" parameterType="Long" resultMap="RoleResultMap">
-        select r.role_code,
+        select r.id,
                r.role_name
         from tb_role r,
              tb_user_role u_r
         where u_r.user_id = #{value}
-          and r.role_code = u_r.role_code
+          and r.id = u_r.role_id
     </select>
 
     <select id="selectRoleCodeByUserId" parameterType="Long" resultType="Integer">
-        select role_code
+        select role_id
         from tb_user_role
         where user_id = #{value}
     </select>

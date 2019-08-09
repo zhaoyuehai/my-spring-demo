@@ -44,9 +44,12 @@ public class MyUserDetailsService implements UserDetailsService {
         } else if (user.getStatus() == 3) {
             throw new DisabledException("User disabled.");
         }
-        List<RoleEntity> roles = userMapper.selectRoleByUserId(user.getId());
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        roles.forEach(roleEntity -> authorities.add(new SimpleGrantedAuthority(roleEntity.getName())));
+        RoleEntity role = userMapper.selectRoleByUserId(user.getId());
+        if (role != null) {
+//        roles.forEach(roleEntity -> authorities.add(new SimpleGrantedAuthority(roleEntity.getName())));
+            authorities.add(new SimpleGrantedAuthority(role.getName()));
+        }
         return new User(user.getUserName(), user.getPassword(), authorities);
     }
 }

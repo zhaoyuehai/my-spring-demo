@@ -1,11 +1,11 @@
 package com.yuehai.entity;
 
-import lombok.Getter;
+import lombok.Data;
 
 /**
  * Created by zhaoyuehai 2019/4/10
  */
-@Getter
+@Data
 public class LoginEntity {
     private String accessToken;
     private String refreshToken;

@@ -1,6 +1,7 @@
 package com.yuehai.service;
 
 import com.yuehai.entity.ResultEntity;
+import com.yuehai.entity.RoleEntity;
 import com.yuehai.entity.UserEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -39,6 +40,8 @@ public interface UserService {
 
     UserEntity findUserByEmail(String email);
 
+    RoleEntity finRoleByUserId(long userId);
+
     @PreAuthorize("hasRole('ADMIN') or hasRole('VIP') or hasRole('USER')")
     ResultEntity findUsers(int pageNum, int pageSize);
 
@@ -51,31 +54,21 @@ public interface UserService {
     ResultEntity updateUser(UserEntity userEntity);
 
     /**
-     * 给用户添加角色
+     * 给用户设置角色
      *
      * @param userId   用户ID
      * @param roleCode 角色ID
      * @return int
      */
     @PreAuthorize("hasRole('ADMIN')")
-    int addRole(long userId, int roleCode);
+    int setRole(long userId, int roleCode);
 
     /**
      * 删除用户单个角色
      *
      * @param userId   用户ID
-     * @param roleCode 角色ID
      * @return int
      */
     @PreAuthorize("hasRole('ADMIN')")
-    int deleteRole(long userId, int roleCode);
-
-    /**
-     * 删除用户全部角色
-     *
-     * @param userId 用户ID
-     * @return int
-     */
-    @PreAuthorize("hasRole('ADMIN')")
-    int deleteRoles(long userId);
+    int deleteRole(long userId);
 }
