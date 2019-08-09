@@ -43,8 +43,7 @@ jwt:
   secret: ZHAOYUEHAIchangqiaoqiao
   header: Authorization
   tokenHeader: "Bearer "
-  expiration:  7200 #7200s -> 2小时 过期
-  #  expiration:  300 #300s ->测试时， 5分钟过期
+  expiration:  28800 #28800s -> 8小时过期
   route:
     authentication:
       path: auth/login

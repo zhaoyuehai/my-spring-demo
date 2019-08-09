@@ -56,12 +56,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .authorizeRequests()
                 .antMatchers("/",
-                        "/api/v1/hello",
                         "/*.html",
                         "/favicon.ico",
                         "/**/*.html",
                         "/**/*.css",
-                        "/**/*.js")
+                        "/**/*.js",
+                        "/api/v1/hello")
                 .permitAll() //允许对于网站静态资源的无授权访问
                 .antMatchers(HttpMethod.POST,
                         "/api/v1/login",
